@@ -1,0 +1,16 @@
+[
+	{
+		"modid": "pixelgenocide",
+		"name": "PixelGenocide",
+		"description": "PixelGenocide cleans all the non-special pixelmon in the server to reduce lag.",
+		"version": "${version}",
+		"mcversion": "${mcversion}",
+		"url": "http://happyzleaf.com/",
+		"updateUrl": "https://github.com/happyzleaf/PixelGenocide",
+		"authorList": ["happyzleaf"],
+		"credits": "",
+		"logoFile": "",
+		"screenshots": [],
+		"dependencies": ["pixelmon"]
+	}
+]
