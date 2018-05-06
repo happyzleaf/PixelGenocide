@@ -36,11 +36,11 @@ import java.util.concurrent.TimeUnit;
 
 @Plugin(id = PixelGenocide.PLUGIN_ID, name = PixelGenocide.PLUGIN_NAME, version = PixelGenocide.VERSION, authors = {"happyzleaf"},
 		description = "PixelGenocide cleans all the non-special pixelmon in the server to reduce lag.",
-		url = "http://happyzleaf.com/", dependencies = {@Dependency(id = "pixelmon", version = "6.2.3"), @Dependency(id = "entity-particles", version = "2.1", optional = true)})
+		url = "http://happyzleaf.com/", dependencies = @Dependency(id = "pixelmon", version = "6.2.3"))
 public class PixelGenocide {
 	public static final String PLUGIN_ID = "pixelgenocide";
 	public static final String PLUGIN_NAME = "PixelGenocide";
-	public static final String VERSION = "1.0.0";
+	public static final String VERSION = "1.0.1";
 	
 	public static final Logger LOGGER = LoggerFactory.getLogger(PLUGIN_NAME);
 	
@@ -107,6 +107,7 @@ public class PixelGenocide {
 				})
 				.build();
 		Sponge.getCommandManager().register(this, main, PLUGIN_ID);
+		
 		LOGGER.info(PLUGIN_NAME + " by happyzleaf loaded! (http://www.happyzleaf.com/)");
 	}
 	

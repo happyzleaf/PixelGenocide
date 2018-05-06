@@ -12,6 +12,7 @@ import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.serializer.TextSerializers;
 
@@ -35,7 +36,7 @@ public class PGConfig {
 	private static boolean keepLegendaries = true;
 	private static boolean keepBosses = true;
 	private static boolean keepShinies = true;
-	private static boolean keepWithParticles = true;
+	private static boolean keepWithParticles = false;
 	private static boolean keepWithinSpecialPlayer = false;
 	private static List<String> whitelist = new ArrayList<>();
 	private static List<String> blacklist = new ArrayList<>();
@@ -50,58 +51,67 @@ public class PGConfig {
 		blacklist.add(EnumPokemon.Caterpie.name);
 	}
 	
-	private static boolean hasEntityParticles;
-	
 	public static void init(ConfigurationLoader<CommentedConfigurationNode> loader, File file) {
 		PGConfig.loader = loader;
 		PGConfig.file = file;
 		
 		TypeSerializers.getDefaultSerializers().registerType(TypeToken.of(GameTime.class), new GameTime.Serializer());
 		
-		hasEntityParticles = Sponge.getPluginManager().isLoaded("entity-particles");
 		loadConfig();
 	}
 	
 	public static void loadConfig() {
 		if (!file.exists()) {
-			load();
 			saveConfig();
-		} else {
-			load();
-			
-			ConfigurationNode miscellaneous = node.getNode("miscellaneous");
-			try {
-				timer = miscellaneous.getNode("timer").getValue(TypeToken.of(GameTime.class));
-			} catch (ObjectMappingException e) {
-				e.printStackTrace();
+		}
+		
+		load();
+		
+		ConfigurationNode miscellaneous = node.getNode("miscellaneous");
+		try {
+			timer = miscellaneous.getNode("timer").getValue(TypeToken.of(GameTime.class));
+		} catch (ObjectMappingException e) {
+			e.printStackTrace();
+		}
+		maxSpecialPlayerBlocks = miscellaneous.getNode("maxSpecialPlayerBlocks").getInt();
+		
+		ConfigurationNode message = miscellaneous.getNode("message");
+		messageTimer = message.getNode("timer").getString();
+		messageCleaned = message.getNode("cleaned").getString();
+		
+		CommentedConfigurationNode keep = node.getNode("keep");
+		keepLegendaries = keep.getNode("legendaries").getBoolean();
+		keepBosses = keep.getNode("bosses").getBoolean();
+		keepShinies = keep.getNode("shinies").getBoolean();
+		keepWithParticles = keep.getNode("withParticles").getBoolean();
+		if (keepWithParticles) {
+			PluginContainer ep = Sponge.getPluginManager().getPlugin("entity-particles").orElse(null);
+			if (ep == null) {
+				PixelGenocide.LOGGER.info("entity-particles was not found, the support (most likely) won't work.");
+			} else {
+				if (ep.getVersion().orElse("").equals("2.1")) {
+					PixelGenocide.LOGGER.info("entity-particles found, the support has been enabled.");
+				} else {
+					PixelGenocide.LOGGER.info("entity-particles found, but it's an untested version, please set \"keep.wthParticles\" to \"false\" if you encounter any problem.");
+				}
 			}
-			maxSpecialPlayerBlocks = miscellaneous.getNode("maxSpecialPlayerBlocks").getInt();
-			
-			ConfigurationNode message = miscellaneous.getNode("message");
-			messageTimer = message.getNode("timer").getString();
-			messageCleaned = message.getNode("cleaned").getString();
-			
-			CommentedConfigurationNode keep = node.getNode("keep");
-			keepLegendaries = keep.getNode("legendaries").getBoolean();
-			keepBosses = keep.getNode("bosses").getBoolean();
-			keepShinies = keep.getNode("shinies").getBoolean();
-			if (hasEntityParticles) {
-				keepWithParticles = node.getNode("withParticles").getBoolean();
-			}
-			keepWithinSpecialPlayer = keep.getNode("withinSpecialPlayer").getBoolean();
-			try {
-				whitelist = keep.getNode("whitelist").getList(TypeToken.of(String.class));
-				blacklist = keep.getNode("blacklist").getList(TypeToken.of(String.class));
-			} catch (ObjectMappingException e) {
-				e.printStackTrace();
-			}
+		}
+		keepWithinSpecialPlayer = keep.getNode("withinSpecialPlayer").getBoolean();
+		try {
+			whitelist = keep.getNode("whitelist").getList(TypeToken.of(String.class));
+			blacklist = keep.getNode("blacklist").getList(TypeToken.of(String.class));
+		} catch (ObjectMappingException e) {
+			e.printStackTrace();
 		}
 	}
 	
 	public static void saveConfig() {
+		load();
+		
 		CommentedConfigurationNode miscellaneous = node.getNode("miscellaneous");
 		try {
-			miscellaneous.getNode("timer").setValue(new TypeToken<GameTime>() {}, timer);
+			miscellaneous.getNode("timer").setValue(new TypeToken<GameTime>() {
+			}, timer);
 		} catch (ObjectMappingException e) {
 			e.printStackTrace();
 		}
@@ -110,8 +120,8 @@ public class PGConfig {
 		CommentedConfigurationNode message = miscellaneous.getNode("message");
 		message.getNode("timer").setComment("You can use %timer%.").setValue(messageTimer);
 		message.getNode("cleaned").setComment("You can use %quantity%.").setValue(messageCleaned);
-		CommentedConfigurationNode keep = node.getNode("keep").setComment("Whether the pixelmon should be kept.");
 		
+		CommentedConfigurationNode keep = node.getNode("keep").setComment("Whether the pixelmon should be kept.");
 		keep.getNode("legendaries").setValue(keepLegendaries);
 		keep.getNode("bosses").setValue(keepBosses);
 		keep.getNode("shinies").setValue(keepShinies);
@@ -150,8 +160,12 @@ public class PGConfig {
 				&& (keepLegendaries && EnumPokemon.legendaries.contains(name)
 				|| keepBosses && pixelmon.isBossPokemon()
 				|| keepShinies && pixelmon.getIsShiny()
-				|| keepWithParticles && EPBridge.hasParticles((Entity) pixelmon)
+				|| keepWithParticles && hasParticles((Entity) pixelmon)
 				|| keepWithinSpecialPlayer && isWithinSpecialPlayer(pixelmon));
+	}
+	
+	private static boolean hasParticles(Entity entity) {
+		return entity.getKeys().stream().anyMatch(key -> key.getId().equals("entity-particles:id"));
 	}
 	
 	private static boolean isWithinSpecialPlayer(net.minecraft.entity.Entity entity) {

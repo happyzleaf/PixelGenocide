@@ -2,15 +2,18 @@
 	{
 		"modid": "pixelgenocide",
 		"name": "PixelGenocide",
-		"description": "PixelGenocide cleans all the non-special pixelmon in the server to reduce lag.",
 		"version": "${version}",
 		"mcversion": "${mcversion}",
+		"description": "PixelGenocide cleans all the non-special pixelmon in the server to reduce lag.",
 		"url": "http://happyzleaf.com/",
-		"updateUrl": "https://github.com/happyzleaf/PixelGenocide",
 		"authorList": ["happyzleaf"],
-		"credits": "",
-		"logoFile": "",
-		"screenshots": [],
-		"dependencies": ["pixelmon"]
+		"requiredMods": [
+			"pixelmon@6.2.3",
+			"entity-particles@2.1"
+		],
+		"dependencies": [
+			"pixelmon@6.2.3",
+			"entity-particles@2.1"
+		]
 	}
 ]
