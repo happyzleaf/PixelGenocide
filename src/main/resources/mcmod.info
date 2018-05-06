@@ -7,13 +7,7 @@
 		"description": "PixelGenocide cleans all the non-special pixelmon in the server to reduce lag.",
 		"url": "http://happyzleaf.com/",
 		"authorList": ["happyzleaf"],
-		"requiredMods": [
-			"pixelmon@6.2.3",
-			"entity-particles@2.1"
-		],
-		"dependencies": [
-			"pixelmon@6.2.3",
-			"entity-particles@2.1"
-		]
+		"requiredMods": ["pixelmon@6.2.3"],
+		"dependencies": ["pixelmon@6.2.3"]
 	}
 ]
