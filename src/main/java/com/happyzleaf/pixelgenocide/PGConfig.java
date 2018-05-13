@@ -165,7 +165,7 @@ public class PGConfig {
 	}
 	
 	private static boolean hasParticles(Entity entity) {
-		return entity.getKeys().stream().anyMatch(key -> key.getId().equals("entity-particles:id"));
+		return entity.getKeys().stream().anyMatch(key -> key.getId().equals("entity-particles:active"));
 	}
 	
 	private static boolean isWithinSpecialPlayer(net.minecraft.entity.Entity entity) {
