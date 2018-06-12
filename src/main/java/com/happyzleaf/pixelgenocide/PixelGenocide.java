@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 @Plugin(id = PixelGenocide.PLUGIN_ID, name = PixelGenocide.PLUGIN_NAME, version = PixelGenocide.VERSION, authors = {"happyzleaf"},
 		description = "PixelGenocide cleans all the non-special pixelmon in the server to reduce lag.",
-		url = "http://happyzleaf.com/", dependencies = @Dependency(id = "pixelmon", version = "6.2.3"))
+		url = "http://happyzleaf.com/", dependencies = @Dependency(id = "pixelmon", version = "6.3.1"))
 public class PixelGenocide {
 	public static final String PLUGIN_ID = "pixelgenocide";
 	public static final String PLUGIN_NAME = "PixelGenocide";
