@@ -10,16 +10,20 @@ import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.data.key.Key;
+import org.spongepowered.api.data.value.mutable.Value;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.serializer.TextSerializers;
+import org.spongepowered.api.util.TypeTokens;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -36,6 +40,7 @@ public class PGConfig {
 	private static boolean keepLegendaries = true;
 	private static boolean keepBosses = true;
 	private static boolean keepShinies = true;
+	private static boolean keepWithPokerus = true;
 	private static boolean keepWithParticles = false;
 	private static boolean keepWithinSpecialPlayer = false;
 	private static List<String> whitelist = new ArrayList<>();
@@ -83,6 +88,13 @@ public class PGConfig {
 		keepLegendaries = keep.getNode("legendaries").getBoolean();
 		keepBosses = keep.getNode("bosses").getBoolean();
 		keepShinies = keep.getNode("shinies").getBoolean();
+		if (keep.getNode("withPokerus").isVirtual()) { //Forcing the new config to be generated. One day, i'll write a config library for these kind of things, but not today.
+			keep.getNode("withPokerus").setValue(false);
+			save();
+			
+			PixelGenocide.LOGGER.info("\"keep.withPokerus\" has been added to your config, please go take a look!");
+		}
+		keepWithPokerus = keep.getNode("withPokerus").getBoolean();
 		keepWithParticles = keep.getNode("withParticles").getBoolean();
 		if (keepWithParticles) {
 			PluginContainer ep = Sponge.getPluginManager().getPlugin("entity-particles").orElse(null);
@@ -91,8 +103,9 @@ public class PGConfig {
 			} else {
 				if (ep.getVersion().orElse("").equals("2.1")) {
 					PixelGenocide.LOGGER.info("entity-particles found, the support has been enabled.");
+					keepWithParticles = false;
 				} else {
-					PixelGenocide.LOGGER.info("entity-particles found, but it's an untested version, please set \"keep.wthParticles\" to \"false\" if you encounter any problem.");
+					PixelGenocide.LOGGER.info("entity-particles found, but it's an untested version, please set \"keep.withParticles\" to \"false\" if you encounter any problem.");
 				}
 			}
 		}
@@ -125,6 +138,7 @@ public class PGConfig {
 		keep.getNode("legendaries").setValue(keepLegendaries);
 		keep.getNode("bosses").setValue(keepBosses);
 		keep.getNode("shinies").setValue(keepShinies);
+		keep.getNode("withPokerus").setValue(keepWithPokerus);
 		keep.getNode("withParticles").setComment("You will need entity-particles for this to work.").setValue(keepWithParticles);
 		keep.getNode("withinSpecialPlayer").setComment("The pixelmon will not be cleared if they're near a player with the permission '" + PixelGenocide.PLUGIN_ID + ".specialplayer'. WARNING: Could cost performance.").setValue(keepWithinSpecialPlayer);
 		keep.getNode("whitelist").setComment("Keep these pixelmon regardless their specs.").setValue(whitelist);
@@ -160,12 +174,13 @@ public class PGConfig {
 				&& (keepLegendaries && EnumPokemon.legendaries.contains(name)
 				|| keepBosses && pixelmon.isBossPokemon()
 				|| keepShinies && pixelmon.getIsShiny()
+				|| keepWithPokerus && pixelmon.getPokerus().isPresent()
 				|| keepWithParticles && hasParticles((Entity) pixelmon)
 				|| keepWithinSpecialPlayer && isWithinSpecialPlayer(pixelmon));
 	}
 	
 	private static boolean hasParticles(Entity entity) {
-		return entity.getKeys().stream().anyMatch(key -> key.getId().equals("entity-particles:active"));
+		return entity.getKeys().stream().anyMatch(key -> key.getId().equals("entity-particles:id")); //Will provide support for "active" value later
 	}
 	
 	private static boolean isWithinSpecialPlayer(net.minecraft.entity.Entity entity) {

@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 public class PixelGenocide {
 	public static final String PLUGIN_ID = "pixelgenocide";
 	public static final String PLUGIN_NAME = "PixelGenocide";
-	public static final String VERSION = "1.0.1";
+	public static final String VERSION = "1.0.3";
 	
 	public static final Logger LOGGER = LoggerFactory.getLogger(PLUGIN_NAME);
 	
@@ -96,7 +96,7 @@ public class PixelGenocide {
 							src.sendMessage(Text.of(TextColors.RED, "You don't have the permission to clean all the worlds!"));
 						}
 					}
-					return CommandResult.successCount(0);
+					return CommandResult.empty();
 				})
 				.build();
 		CommandSpec main = CommandSpec.builder()
@@ -142,7 +142,7 @@ public class PixelGenocide {
 			if (entity instanceof EntityPixelmon) {
 				EntityPixelmon pixelmon = (EntityPixelmon) entity;
 				if (!(pixelmon.hasOwner() || pixelmon.isInRanchBlock || pixelmon.battleController != null || PGConfig.shouldKeepPokemon(pixelmon))) {
-					pixelmon.setDead();
+					pixelmon.unloadEntity();
 					quantity++;
 				}
 			}
