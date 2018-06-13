@@ -10,20 +10,16 @@ import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.data.key.Key;
-import org.spongepowered.api.data.value.mutable.Value;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.serializer.TextSerializers;
-import org.spongepowered.api.util.TypeTokens;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -123,16 +119,15 @@ public class PGConfig {
 		
 		CommentedConfigurationNode miscellaneous = node.getNode("miscellaneous");
 		try {
-			miscellaneous.getNode("timer").setValue(new TypeToken<GameTime>() {
-			}, timer);
+			miscellaneous.getNode("timer").setValue(new TypeToken<GameTime>() {}, timer);
 		} catch (ObjectMappingException e) {
 			e.printStackTrace();
 		}
 		miscellaneous.getNode("maxSpecialPlayerBlocks").setComment("How many blocks the pixelmon will not be removed within a special player. See keep.withinSpecialPlayer for more details.").setValue(maxSpecialPlayerBlocks);
 		
 		CommentedConfigurationNode message = miscellaneous.getNode("message");
-		message.getNode("timer").setComment("You can use %timer%.").setValue(messageTimer);
-		message.getNode("cleaned").setComment("You can use %quantity%.").setValue(messageCleaned);
+		message.getNode("timer").setComment("Placeholders: %timer%.").setValue(messageTimer);
+		message.getNode("cleaned").setComment("Placeholders: %quantity%.").setValue(messageCleaned);
 		
 		CommentedConfigurationNode keep = node.getNode("keep").setComment("Whether the pixelmon should be kept.");
 		keep.getNode("legendaries").setValue(keepLegendaries);
