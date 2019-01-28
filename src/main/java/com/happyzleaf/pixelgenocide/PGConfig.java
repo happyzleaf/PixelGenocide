@@ -3,13 +3,15 @@ package com.happyzleaf.pixelgenocide;
 import com.flowpowered.math.vector.Vector3d;
 import com.google.common.reflect.TypeToken;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
-import com.pixelmonmod.pixelmon.enums.EnumPokemon;
+import com.pixelmonmod.pixelmon.enums.EnumSpecies;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.data.key.Key;
+import org.spongepowered.api.data.value.mutable.Value;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.plugin.PluginContainer;
@@ -43,13 +45,13 @@ public class PGConfig {
 	private static List<String> blacklist = new ArrayList<>();
 	
 	static {
-		whitelist.add(EnumPokemon.Pikachu.name);
-		whitelist.add(EnumPokemon.Eevee.name);
-		whitelist.add(EnumPokemon.Ditto.name);
+		whitelist.add(EnumSpecies.Pikachu.name);
+		whitelist.add(EnumSpecies.Eevee.name);
+		whitelist.add(EnumSpecies.Ditto.name);
 		
-		blacklist.add(EnumPokemon.Zubat.name);
-		blacklist.add(EnumPokemon.Geodude.name);
-		blacklist.add(EnumPokemon.Caterpie.name);
+		blacklist.add(EnumSpecies.Zubat.name);
+		blacklist.add(EnumSpecies.Geodude.name);
+		blacklist.add(EnumSpecies.Caterpie.name);
 	}
 	
 	public static void init(ConfigurationLoader<CommentedConfigurationNode> loader, File file) {
@@ -166,15 +168,22 @@ public class PGConfig {
 		String name = pixelmon.getPokemonName();
 		return whitelist.contains(name)
 				|| !blacklist.contains(name)
-				&& (keepLegendaries && EnumPokemon.legendaries.contains(name)
+				&& (keepLegendaries && EnumSpecies.legendaries.contains(name)
 				|| keepBosses && pixelmon.isBossPokemon()
-				|| keepShinies && pixelmon.getIsShiny()
+				|| keepShinies && pixelmon.getPokemonData().isShiny()
 				|| keepWithPokerus && pixelmon.getPokerus().isPresent()
 				|| keepWithParticles && hasParticles((Entity) pixelmon)
 				|| keepWithinSpecialPlayer && isWithinSpecialPlayer(pixelmon));
 	}
 	
 	private static boolean hasParticles(Entity entity) {
+		Key<Value<String>> idKey = (Key<Value<String>>) entity.getKeys().stream().filter(key -> key.getId().equals("entity-particles:id")).findFirst().orElse(null);
+		if (idKey != null) {
+			String key = entity.get(idKey).orElse(null);
+			if (key != null) {
+				//the entity has an aura which id is "key"
+			}
+		}
 		return entity.getKeys().stream().anyMatch(key -> key.getId().equals("entity-particles:id")); //Will provide support for "active" value later
 	}
 	

@@ -36,11 +36,11 @@ import java.util.concurrent.TimeUnit;
 
 @Plugin(id = PixelGenocide.PLUGIN_ID, name = PixelGenocide.PLUGIN_NAME, version = PixelGenocide.VERSION, authors = {"happyzleaf"},
 		description = "PixelGenocide cleans all the non-special pixelmon in the server to reduce lag.",
-		url = "http://happyzleaf.com/", dependencies = @Dependency(id = "pixelmon", version = "6.3.1"))
+		url = "http://happyzleaf.com/", dependencies = @Dependency(id = "pixelmon", version = "7.0.0"))
 public class PixelGenocide {
 	public static final String PLUGIN_ID = "pixelgenocide";
 	public static final String PLUGIN_NAME = "PixelGenocide";
-	public static final String VERSION = "1.0.3";
+	public static final String VERSION = "1.0.4";
 	
 	public static final Logger LOGGER = LoggerFactory.getLogger(PLUGIN_NAME);
 	
@@ -141,7 +141,7 @@ public class PixelGenocide {
 		for (Entity entity : world.loadedEntityList) {
 			if (entity instanceof EntityPixelmon) {
 				EntityPixelmon pixelmon = (EntityPixelmon) entity;
-				if (!(pixelmon.hasOwner() || pixelmon.isInRanchBlock || pixelmon.battleController != null || PGConfig.shouldKeepPokemon(pixelmon))) {
+				if (!(pixelmon.hasOwner() || pixelmon.battleController != null || pixelmon.getPokemonData().isInRanch() || PGConfig.shouldKeepPokemon(pixelmon))) {
 					pixelmon.unloadEntity();
 					quantity++;
 				}
