@@ -36,6 +36,7 @@ public class PGConfig {
 	private static int maxSpecialPlayerBlocks = 100;
 	
 	private static boolean keepLegendaries = true;
+	private static boolean keepUltraBeasts = true;
 	private static boolean keepBosses = true;
 	private static boolean keepShinies = true;
 	private static boolean keepWithPokerus = true;
@@ -84,9 +85,16 @@ public class PGConfig {
 		
 		CommentedConfigurationNode keep = node.getNode("keep");
 		keepLegendaries = keep.getNode("legendaries").getBoolean();
+		if (keep.getNode("ultraBeasts").isVirtual()) { // Copy pasted from below.
+			keep.getNode("ultraBeasts").setValue(false);
+			save();
+			
+			PixelGenocide.LOGGER.info("\"keep.ultraBeasts\" has been added to your config, please go take a look!");
+		}
+		keepUltraBeasts = keep.getNode("ultraBeasts").getBoolean();
 		keepBosses = keep.getNode("bosses").getBoolean();
 		keepShinies = keep.getNode("shinies").getBoolean();
-		if (keep.getNode("withPokerus").isVirtual()) { //Forcing the new config to be generated. One day, i'll write a config library for these kind of things, but not today.
+		if (keep.getNode("withPokerus").isVirtual()) { // Forcing the new config to be generated. One day, i'll write a config library for these kind of things, but not today.
 			keep.getNode("withPokerus").setValue(false);
 			save();
 			
@@ -133,6 +141,7 @@ public class PGConfig {
 		
 		CommentedConfigurationNode keep = node.getNode("keep").setComment("Whether the pixelmon should be kept.");
 		keep.getNode("legendaries").setValue(keepLegendaries);
+		keep.getNode("ultraBeasts").setValue(keepUltraBeasts);
 		keep.getNode("bosses").setValue(keepBosses);
 		keep.getNode("shinies").setValue(keepShinies);
 		keep.getNode("withPokerus").setValue(keepWithPokerus);
@@ -169,6 +178,7 @@ public class PGConfig {
 		return whitelist.contains(name)
 				|| !blacklist.contains(name)
 				&& (keepLegendaries && EnumSpecies.legendaries.contains(name)
+				|| keepUltraBeasts && EnumSpecies.ultrabeasts.contains(name)
 				|| keepBosses && pixelmon.isBossPokemon()
 				|| keepShinies && pixelmon.getPokemonData().isShiny()
 				|| keepWithPokerus && pixelmon.getPokerus().isPresent()

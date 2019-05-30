@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 public class PixelGenocide {
 	public static final String PLUGIN_ID = "pixelgenocide";
 	public static final String PLUGIN_NAME = "PixelGenocide";
-	public static final String VERSION = "1.0.4";
+	public static final String VERSION = "1.0.5";
 	
 	public static final Logger LOGGER = LoggerFactory.getLogger(PLUGIN_NAME);
 	
@@ -48,7 +48,7 @@ public class PixelGenocide {
 	
 	static {
 		try {
-			url = new URL("http://happyzleaf.com/");
+			url = new URL("https://happyzleaf.com/");
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		}
