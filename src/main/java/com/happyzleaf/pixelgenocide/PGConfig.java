@@ -31,7 +31,7 @@ public class PGConfig {
 	
 	public static GameTime timer = new GameTime(10, TimeUnit.MINUTES);
 	public static String messageTimer = "&4All non-special pixelmon will despawn in &c%timer%&4.";
-	public static int messageTimerRate = 5; // 0 or less to disable
+	public static String scriptTimerRate = "s <= 5 ? 1 : s <= 15 ? 5 : 30"; // empty to disable
 	
 	private static String messageCleaned = "&7%quantity% pixelmon have been cleaned.";
 	private static int maxSpecialPlayerBlocks = 100;
@@ -78,17 +78,17 @@ public class PGConfig {
 		} catch (ObjectMappingException e) {
 			e.printStackTrace();
 		}
+		if (miscellaneous.getNode("timerRate").isVirtual()) { // Copy pasted from below.
+			miscellaneous.getNode("timerRate").setValue(scriptTimerRate);
+			save();
+			
+			PixelGenocide.LOGGER.info("\"miscellaneous.timerRate\" has been added to your config, please go take a look!");
+		}
+		scriptTimerRate = miscellaneous.getNode("timerRate").getString();
 		maxSpecialPlayerBlocks = miscellaneous.getNode("maxSpecialPlayerBlocks").getInt();
 		
 		ConfigurationNode message = miscellaneous.getNode("message");
 		messageTimer = message.getNode("timer").getString();
-		if (message.getNode("timerRate").isVirtual()) { // Copy pasted from below.
-			message.getNode("timerRate").setValue(0);
-			save();
-			
-			PixelGenocide.LOGGER.info("\"message.timerRate\" has been added to your config, please go take a look!");
-		}
-		messageTimerRate = message.getNode("timerRate").getInt();
 		messageCleaned = message.getNode("cleaned").getString();
 		
 		CommentedConfigurationNode keep = node.getNode("keep");
@@ -141,11 +141,11 @@ public class PGConfig {
 		} catch (ObjectMappingException e) {
 			e.printStackTrace();
 		}
+		miscellaneous.getNode("timerRate").setComment("How often the remaining time till cleaning should be displayed. Leave empty to disable.").setValue(scriptTimerRate);
 		miscellaneous.getNode("maxSpecialPlayerBlocks").setComment("How many blocks the pixelmon will not be removed within a special player. See keep.withinSpecialPlayer for more details.").setValue(maxSpecialPlayerBlocks);
 		
 		CommentedConfigurationNode message = miscellaneous.getNode("message");
 		message.getNode("timer").setComment("Placeholders: %timer%.").setValue(messageTimer);
-		message.getNode("timerRate").setComment("How often the remaining time till cleaning should be displayed. 0 or less to disable.").setValue(messageTimerRate);
 		message.getNode("cleaned").setComment("Placeholders: %quantity%.").setValue(messageCleaned);
 		
 		CommentedConfigurationNode keep = node.getNode("keep").setComment("Whether the pixelmon should be kept.");

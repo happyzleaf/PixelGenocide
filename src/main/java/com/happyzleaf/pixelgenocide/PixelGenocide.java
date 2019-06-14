@@ -30,6 +30,9 @@ import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.format.TextStyles;
 import org.spongepowered.api.text.serializer.TextSerializers;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -121,12 +124,14 @@ public class PixelGenocide {
 		task();
 	}
 	
+	private static final ScriptEngine engine = new ScriptEngineManager(null).getEngineByName("Nashorn");
+	
 	private void task() {
 		task = null;
 		Task.builder().delay(5, TimeUnit.SECONDS).execute(() -> {
 			task = TimedTask.builder()
 					.time(PGConfig.timer)
-					.broadcaster(PGConfig.messageTimerRate > 0 ? new TimedTask.TimeBroadcaster() {
+					.broadcaster(PGConfig.scriptTimerRate.isEmpty() ? null : new TimedTask.TimeBroadcaster() {
 						@Override
 						public void broadcast(long remainingSeconds) {
 							MessageChannel.TO_ALL.send(TextSerializers.FORMATTING_CODE.deserialize(PGConfig.messageTimer.replace("%timer%", Helper.getHumanReadableSeconds(remainingSeconds))));
@@ -134,9 +139,23 @@ public class PixelGenocide {
 						
 						@Override
 						public int getRate(long remainingSeconds) {
-							return PGConfig.messageTimerRate;
+							int rate = -1;
+							
+							engine.put("s", remainingSeconds);
+							try {
+								Object result = engine.eval(PGConfig.scriptTimerRate);
+								if (result instanceof Number) {
+									rate = ((Number) result).intValue();
+								} else {
+									LOGGER.error("The result of 'miscellaneous.timerRate' isn't a number! The message won't be broadcasted. Please fix!");
+								}
+							} catch (ScriptException e) {
+								LOGGER.error("An exception was thrown by the script 'miscellaneous.timerRate'! The message won't be broadcasted. Please fix!", e);
+							}
+							
+							return rate;
 						}
-					} : null)
+					})
 					.notifier(() -> {
 						cleanPixelmon();
 						task();
