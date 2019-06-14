@@ -2,6 +2,7 @@ package com.happyzleaf.pixelgenocide;
 
 import com.flowpowered.math.vector.Vector3d;
 import com.google.common.reflect.TypeToken;
+import com.happyzleaf.pixelgenocide.util.GameTime;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
 import com.pixelmonmod.pixelmon.enums.EnumSpecies;
 import ninja.leaping.configurate.ConfigurationNode;
@@ -10,8 +11,6 @@ import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.data.key.Key;
-import org.spongepowered.api.data.value.mutable.Value;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.plugin.PluginContainer;
@@ -32,6 +31,8 @@ public class PGConfig {
 	
 	public static GameTime timer = new GameTime(10, TimeUnit.MINUTES);
 	public static String messageTimer = "&4All non-special pixelmon will despawn in &c%timer%&4.";
+	public static int messageTimerRate = 5; // 0 or less to disable
+	
 	private static String messageCleaned = "&7%quantity% pixelmon have been cleaned.";
 	private static int maxSpecialPlayerBlocks = 100;
 	
@@ -81,6 +82,13 @@ public class PGConfig {
 		
 		ConfigurationNode message = miscellaneous.getNode("message");
 		messageTimer = message.getNode("timer").getString();
+		if (message.getNode("timerRate").isVirtual()) { // Copy pasted from below.
+			message.getNode("timerRate").setValue(0);
+			save();
+			
+			PixelGenocide.LOGGER.info("\"message.timerRate\" has been added to your config, please go take a look!");
+		}
+		messageTimerRate = message.getNode("timerRate").getInt();
 		messageCleaned = message.getNode("cleaned").getString();
 		
 		CommentedConfigurationNode keep = node.getNode("keep");
@@ -137,6 +145,7 @@ public class PGConfig {
 		
 		CommentedConfigurationNode message = miscellaneous.getNode("message");
 		message.getNode("timer").setComment("Placeholders: %timer%.").setValue(messageTimer);
+		message.getNode("timerRate").setComment("How often the remaining time till cleaning should be displayed. 0 or less to disable.").setValue(messageTimerRate);
 		message.getNode("cleaned").setComment("Placeholders: %quantity%.").setValue(messageCleaned);
 		
 		CommentedConfigurationNode keep = node.getNode("keep").setComment("Whether the pixelmon should be kept.");
@@ -187,13 +196,13 @@ public class PGConfig {
 	}
 	
 	private static boolean hasParticles(Entity entity) {
-		Key<Value<String>> idKey = (Key<Value<String>>) entity.getKeys().stream().filter(key -> key.getId().equals("entity-particles:id")).findFirst().orElse(null);
-		if (idKey != null) {
-			String key = entity.get(idKey).orElse(null);
-			if (key != null) {
-				//the entity has an aura which id is "key"
-			}
-		}
+//		Key<Value<String>> idKey = (Key<Value<String>>) entity.getKeys().stream().filter(key -> key.getId().equals("entity-particles:id")).findFirst().orElse(null);
+//		if (idKey != null) {
+//			String key = entity.get(idKey).orElse(null);
+//			if (key != null) {
+//				//the entity has an aura which id is "key"
+//			}
+//		}
 		return entity.getKeys().stream().anyMatch(key -> key.getId().equals("entity-particles:id")); //Will provide support for "active" value later
 	}
 	

@@ -1,4 +1,4 @@
-package com.happyzleaf.pixelgenocide;
+package com.happyzleaf.pixelgenocide.util;
 
 import com.google.common.reflect.TypeToken;
 import ninja.leaping.configurate.ConfigurationNode;
@@ -7,17 +7,38 @@ import ninja.leaping.configurate.objectmapping.serialize.TypeSerializer;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+/**
+ * @author happyzleaf
+ * @since 06/01/2019
+ */
 public class GameTime {
-	public final long value;
-	public final TimeUnit unit;
+	public long value; // TODO make private
+	public TimeUnit unit; // TODO make private
 	
 	public GameTime(long value, TimeUnit unit) {
+		checkArgument(value >= 0, "The value must be 0 or above.");
+		checkArgument(checkNotNull(unit, "unit").ordinal() >= 3, "You cannot use anything below seconds.");
 		this.value = value;
 		this.unit = unit;
 	}
 	
-	public String getReadableTime() {
-		return value + " " + unit.name().charAt(0) + unit.name().substring(1, unit.name().length()).toLowerCase();
+	public long getValue() {
+		return value;
+	}
+	
+	public TimeUnit getTimeUnit() {
+		return unit;
+	}
+	
+	public long toSeconds() {
+		return unit.toSeconds(value);
+	}
+	
+	public String getReadableTime() { // TODO remove
+		return value + " " + unit.name().charAt(0) + unit.name().substring(1).toLowerCase();
 	}
 	
 	public static class Serializer implements TypeSerializer<GameTime> {

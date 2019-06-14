@@ -1,6 +1,8 @@
 package com.happyzleaf.pixelgenocide;
 
 import com.google.inject.Inject;
+import com.happyzleaf.pixelgenocide.util.Helper;
+import com.happyzleaf.pixelgenocide.util.TimedTask;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
 import net.minecraft.entity.Entity;
 import net.minecraft.world.World;
@@ -32,6 +34,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Plugin(id = PixelGenocide.PLUGIN_ID, name = PixelGenocide.PLUGIN_NAME, version = PixelGenocide.VERSION, authors = {"happyzleaf"},
@@ -102,14 +105,16 @@ public class PixelGenocide {
 		CommandSpec main = CommandSpec.builder()
 				.child(clean, "clean")
 				.executor((src, args) -> {
-					src.sendMessage(Text.of(TextColors.GREEN, PLUGIN_NAME, TextColors.DARK_GREEN, " v" + VERSION + " made by ").concat(Text.builder("happyzleaf").style(TextStyles.UNDERLINE).color(TextColors.GREEN).onHover(TextActions.showText(Text.of(TextColors.GREEN, "Click to go to my wonderful website"))).onClick(TextActions.openUrl(url)).build()).concat(Text.of(TextColors.GREEN, ".")));
+					src.sendMessage(Text.of(TextColors.GREEN, PLUGIN_NAME, TextColors.DARK_GREEN, " v" + VERSION + " made by ").concat(Text.builder("happyzleaf").style(TextStyles.UNDERLINE).color(TextColors.GREEN).onHover(TextActions.showText(Text.of(TextColors.GREEN, "Click to go to my *wonderful* website"))).onClick(TextActions.openUrl(url)).build()).concat(Text.of(TextColors.GREEN, ".")));
 					return CommandResult.success();
 				})
 				.build();
 		Sponge.getCommandManager().register(this, main, PLUGIN_ID);
 		
-		LOGGER.info(PLUGIN_NAME + " by happyzleaf loaded! (http://www.happyzleaf.com/)");
+		LOGGER.info(PLUGIN_NAME + " by happyzleaf loaded! (https://www.happyzleaf.com/)");
 	}
+	
+	private static UUID task;
 	
 	@Listener
 	public void onServerStart(GameStartedServerEvent event) {
@@ -117,12 +122,28 @@ public class PixelGenocide {
 	}
 	
 	private void task() {
+		task = null;
 		Task.builder().delay(5, TimeUnit.SECONDS).execute(() -> {
-			MessageChannel.TO_ALL.send(TextSerializers.FORMATTING_CODE.deserialize(PGConfig.messageTimer.replace("%timer%", PGConfig.timer.getReadableTime())));
-			Task.builder().delay(PGConfig.timer.value, PGConfig.timer.unit).execute(() -> {
-				cleanPixelmon();
-				task();
-			}).submit(this);
+			task = TimedTask.builder()
+					.time(PGConfig.timer)
+					.broadcaster(PGConfig.messageTimerRate > 0 ? new TimedTask.TimeBroadcaster() {
+						@Override
+						public void broadcast(long remainingSeconds) {
+							MessageChannel.TO_ALL.send(TextSerializers.FORMATTING_CODE.deserialize(PGConfig.messageTimer.replace("%timer%", Helper.getHumanReadableSeconds(remainingSeconds))));
+						}
+						
+						@Override
+						public int getRate(long remainingSeconds) {
+							return PGConfig.messageTimerRate;
+						}
+					} : null)
+					.notifier(() -> {
+						cleanPixelmon();
+						task();
+						return true;
+					})
+					.submit(this)
+					.getUniqueId();
 		}).submit(this);
 	}
 	
@@ -152,6 +173,12 @@ public class PixelGenocide {
 	
 	@Listener
 	public void onReload(GameReloadEvent event) {
+		if (task != null) {
+			Sponge.getScheduler().getTaskById(task).ifPresent(Task::cancel);
+		}
+		
 		PGConfig.loadConfig();
+		
+		task();
 	}
 }
