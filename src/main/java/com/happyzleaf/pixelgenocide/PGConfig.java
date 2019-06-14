@@ -5,6 +5,7 @@ import com.google.common.reflect.TypeToken;
 import com.happyzleaf.pixelgenocide.util.GameTime;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
 import com.pixelmonmod.pixelmon.enums.EnumSpecies;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
@@ -17,6 +18,10 @@ import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.serializer.TextSerializers;
 
+import javax.script.Compilable;
+import javax.script.ScriptEngine;ù
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,13 +30,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class PGConfig {
+	private static final ScriptEngine engine = new ScriptEngineManager(null).getEngineByName("Nashorn");
+	
 	private static ConfigurationLoader<CommentedConfigurationNode> loader;
 	private static CommentedConfigurationNode node;
 	private static File file;
 	
 	public static GameTime timer = new GameTime(10, TimeUnit.MINUTES);
 	public static String messageTimer = "&4All non-special pixelmon will despawn in &c%timer%&4.";
-	public static String scriptTimerRate = "s <= 5 ? 1 : s <= 15 ? 5 : 30"; // empty to disable
+	private static String stringTimerRate = "s <= 5 ? 1 : s <= 15 ? 5 : s <= 60 ? 30 : s <= 600 ? 300 : s <= 1800 ? 600 : 1800"; // empty to disable
+	public static ScriptObjectMirror scriptTimerRate = null; // null to disable
 	
 	private static String messageCleaned = "&7%quantity% pixelmon have been cleaned.";
 	private static int maxSpecialPlayerBlocks = 100;
@@ -79,12 +87,22 @@ public class PGConfig {
 			e.printStackTrace();
 		}
 		if (miscellaneous.getNode("timerRate").isVirtual()) { // Copy pasted from below.
-			miscellaneous.getNode("timerRate").setValue(scriptTimerRate);
+			miscellaneous.getNode("timerRate").setValue(stringTimerRate);
 			save();
 			
-			PixelGenocide.LOGGER.info("\"miscellaneous.timerRate\" has been added to your config, please go take a look!");
+			PixelGenocide.LOGGER.info("'miscellaneous.timerRate' has been added to your config, please go take a look!");
 		}
-		scriptTimerRate = miscellaneous.getNode("timerRate").getString();
+		stringTimerRate = miscellaneous.getNode("timerRate").getString();
+		if (stringTimerRate.isEmpty()) {
+			scriptTimerRate = null;
+		} else {
+			try {
+				scriptTimerRate = (ScriptObjectMirror) ((Compilable) engine).compile("function (s) { return " + stringTimerRate + "; }").eval();
+			} catch (ScriptException e) {
+				PixelGenocide.LOGGER.error("Cannot compile the script 'miscellaneous.timerRate'. The message will be broadcasted every second. Please fix!", e);
+				scriptTimerRate = null;
+			}
+		}
 		maxSpecialPlayerBlocks = miscellaneous.getNode("maxSpecialPlayerBlocks").getInt();
 		
 		ConfigurationNode message = miscellaneous.getNode("message");
@@ -97,7 +115,7 @@ public class PGConfig {
 			keep.getNode("ultraBeasts").setValue(false);
 			save();
 			
-			PixelGenocide.LOGGER.info("\"keep.ultraBeasts\" has been added to your config, please go take a look!");
+			PixelGenocide.LOGGER.info("'keep.ultraBeasts' has been added to your config, please go take a look!");
 		}
 		keepUltraBeasts = keep.getNode("ultraBeasts").getBoolean();
 		keepBosses = keep.getNode("bosses").getBoolean();
@@ -106,7 +124,7 @@ public class PGConfig {
 			keep.getNode("withPokerus").setValue(false);
 			save();
 			
-			PixelGenocide.LOGGER.info("\"keep.withPokerus\" has been added to your config, please go take a look!");
+			PixelGenocide.LOGGER.info("'keep.withPokerus' has been added to your config, please go take a look!");
 		}
 		keepWithPokerus = keep.getNode("withPokerus").getBoolean();
 		keepWithParticles = keep.getNode("withParticles").getBoolean();
@@ -141,7 +159,7 @@ public class PGConfig {
 		} catch (ObjectMappingException e) {
 			e.printStackTrace();
 		}
-		miscellaneous.getNode("timerRate").setComment("How often the remaining time till cleaning should be displayed. Leave empty to disable.").setValue(scriptTimerRate);
+		miscellaneous.getNode("timerRate").setComment("How often the remaining time till cleaning should be displayed. Leave empty to disable.").setValue(stringTimerRate);
 		miscellaneous.getNode("maxSpecialPlayerBlocks").setComment("How many blocks the pixelmon will not be removed within a special player. See keep.withinSpecialPlayer for more details.").setValue(maxSpecialPlayerBlocks);
 		
 		CommentedConfigurationNode message = miscellaneous.getNode("message");
