@@ -3,9 +3,10 @@ package com.happyzleaf.pixelgenocide;
 import com.flowpowered.math.vector.Vector3d;
 import com.google.common.reflect.TypeToken;
 import com.happyzleaf.pixelgenocide.util.GameTime;
+import com.happyzleaf.pixelgenocide.util.Helper;
+import com.happyzleaf.pixelgenocide.util.TimedTask;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
 import com.pixelmonmod.pixelmon.enums.EnumSpecies;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
@@ -18,10 +19,6 @@ import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.serializer.TextSerializers;
 
-import javax.script.Compilable;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,17 +27,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class PGConfig {
-	private static final ScriptEngine engine = new ScriptEngineManager(null).getEngineByName("Nashorn");
-	
 	private static ConfigurationLoader<CommentedConfigurationNode> loader;
 	private static CommentedConfigurationNode node;
 	private static File file;
 	
 	public static GameTime timer = new GameTime(10, TimeUnit.MINUTES);
 	public static String messageTimer = "&4All non-special pixelmon will despawn in &c%timer%&4.";
-	private static String stringTimerRate = "s <= 5 ? 1 : s <= 15 ? 5 : s <= 60 ? 30 : s <= 600 ? 300 : s <= 1800 ? 600 : 1800"; // empty to disable
-	public static ScriptObjectMirror scriptTimerRate = null; // null to disable
-	
+	public static TimedTask.Info timerRate = new TimedTask.Info("s <= 5 ? 1 : s <= 15 ? 5 : s <= 60 ? 30 : s <= 600 ? 300 : s <= 1800 ? 600 : 1800");
+
 	private static String messageCleaned = "&7%quantity% pixelmon have been cleaned.";
 	private static int maxSpecialPlayerBlocks = 100;
 	
@@ -69,6 +63,7 @@ public class PGConfig {
 		PGConfig.file = file;
 		
 		TypeSerializers.getDefaultSerializers().registerType(TypeToken.of(GameTime.class), new GameTime.Serializer());
+		TypeSerializers.getDefaultSerializers().registerType(TypeToken.of(TimedTask.Info.class), new TimedTask.InfoSerializer());
 		
 		loadConfig();
 	}
@@ -86,23 +81,15 @@ public class PGConfig {
 		} catch (ObjectMappingException e) {
 			e.printStackTrace();
 		}
-		if (miscellaneous.getNode("timerRate").isVirtual()) { // Copy pasted from below.
-			miscellaneous.getNode("timerRate").setValue(stringTimerRate);
-			save();
-			
-			PixelGenocide.LOGGER.info("'miscellaneous.timerRate' has been added to your config, please go take a look!");
+
+		try {
+			timerRate = miscellaneous.getNode("timerRate").getValue(TypeToken.of(TimedTask.Info.class));
+		} catch (ObjectMappingException e) {
+			timerRate = new TimedTask.Info("0");
+
+			PixelGenocide.LOGGER.error("Couldn't deserialize the timerRate. Nothing will be broadcasted.", e);
 		}
-		stringTimerRate = miscellaneous.getNode("timerRate").getString();
-		if (stringTimerRate.isEmpty()) {
-			scriptTimerRate = null;
-		} else {
-			try {
-				scriptTimerRate = (ScriptObjectMirror) ((Compilable) engine).compile("function (s) { return " + stringTimerRate + "; }").eval();
-			} catch (ScriptException e) {
-				PixelGenocide.LOGGER.error("Cannot compile the script 'miscellaneous.timerRate'. The message will be broadcasted every second. Please fix!", e);
-				scriptTimerRate = null;
-			}
-		}
+
 		maxSpecialPlayerBlocks = miscellaneous.getNode("maxSpecialPlayerBlocks").getInt();
 		
 		ConfigurationNode message = miscellaneous.getNode("message");
@@ -111,21 +98,9 @@ public class PGConfig {
 		
 		CommentedConfigurationNode keep = node.getNode("keep");
 		keepLegendaries = keep.getNode("legendaries").getBoolean();
-		if (keep.getNode("ultraBeasts").isVirtual()) { // Copy pasted from below.
-			keep.getNode("ultraBeasts").setValue(false);
-			save();
-			
-			PixelGenocide.LOGGER.info("'keep.ultraBeasts' has been added to your config, please go take a look!");
-		}
 		keepUltraBeasts = keep.getNode("ultraBeasts").getBoolean();
 		keepBosses = keep.getNode("bosses").getBoolean();
 		keepShinies = keep.getNode("shinies").getBoolean();
-		if (keep.getNode("withPokerus").isVirtual()) { // Forcing the new config to be generated. One day, i'll write a config library for these kind of things, but not today.
-			keep.getNode("withPokerus").setValue(false);
-			save();
-			
-			PixelGenocide.LOGGER.info("'keep.withPokerus' has been added to your config, please go take a look!");
-		}
 		keepWithPokerus = keep.getNode("withPokerus").getBoolean();
 		keepWithParticles = keep.getNode("withParticles").getBoolean();
 		if (keepWithParticles) {
@@ -159,7 +134,12 @@ public class PGConfig {
 		} catch (ObjectMappingException e) {
 			e.printStackTrace();
 		}
-		miscellaneous.getNode("timerRate").setComment("How often the remaining time till cleaning should be displayed. Leave empty to disable.").setValue(stringTimerRate);
+		try {
+			miscellaneous.getNode("timerRate").setComment("How often the remaining time till cleaning should be displayed.").setValue(TypeToken.of(TimedTask.Info.class), timerRate);
+		} catch (ObjectMappingException e) {
+			PixelGenocide.LOGGER.error("Couldn't serialize the timerRate. Problems will be encountered.", e);
+		}
+
 		miscellaneous.getNode("maxSpecialPlayerBlocks").setComment("How many blocks the pixelmon will not be removed within a special player. See keep.withinSpecialPlayer for more details.").setValue(maxSpecialPlayerBlocks);
 		
 		CommentedConfigurationNode message = miscellaneous.getNode("message");
@@ -195,7 +175,11 @@ public class PGConfig {
 			e.printStackTrace();
 		}
 	}
-	
+
+	public static Text getMessageTimer(long remainingSeconds) {
+		return TextSerializers.FORMATTING_CODE.deserialize(messageTimer.replace("%timer%", Helper.toHuman(remainingSeconds)));
+	}
+
 	public static Text getMessageCleaned(int quantity) {
 		return TextSerializers.FORMATTING_CODE.deserialize(PGConfig.messageCleaned.replace("%quantity%", "" + quantity).replace("HAVEHAS", quantity == 1 ? "have" : "has"));
 	}

@@ -1,17 +1,7 @@
 package com.happyzleaf.pixelgenocide.util;
 
-/**
- * @author happyzleaf
- * @since 06/01/2019
- */
-public final class Helper {
-	private Helper() {}
-	
-	/**
-	 * TODO style
-	 * Adapted from {@link java.time.Duration#toString()}
-	 */
-	public static String getHumanReadableSeconds(long seconds) {
+public class Helper {
+	public static String toHuman(long seconds) {
 		long hours = seconds / 3600;
 		int minutes = (int) (seconds % 3600 / 60);
 		int secs = (int) (seconds % 60);

@@ -15,8 +15,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @since 06/01/2019
  */
 public class GameTime {
-	public long value; // TODO make private
-	public TimeUnit unit; // TODO make private
+	public final long value;
+	public final TimeUnit unit;
 	
 	public GameTime(long value, TimeUnit unit) {
 		checkArgument(value >= 0, "The value must be 0 or above.");
@@ -24,23 +24,21 @@ public class GameTime {
 		this.value = value;
 		this.unit = unit;
 	}
-	
-	public long getValue() {
-		return value;
-	}
-	
-	public TimeUnit getTimeUnit() {
-		return unit;
-	}
-	
+
+	private long seconds = -1;
 	public long toSeconds() {
-		return unit.toSeconds(value);
+		if (seconds == -1) {
+			seconds = unit.toSeconds(value);
+		}
+
+		return seconds;
 	}
-	
-	public String getReadableTime() { // TODO remove
-		return value + " " + unit.name().charAt(0) + unit.name().substring(1).toLowerCase();
+
+	@Override
+	public String toString() {
+		return "GameTime{" + unit.name() + ":" + value + "}";
 	}
-	
+
 	public static class Serializer implements TypeSerializer<GameTime> {
 		@Override
 		public GameTime deserialize(TypeToken<?> type, ConfigurationNode value) throws ObjectMappingException {
