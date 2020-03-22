@@ -91,6 +91,10 @@ public class TimedTask {
 		}
 	}
 
+	public long getRemainingSeconds() {
+		return remainingSeconds;
+	}
+
 	public static class Info {
 		private static final ScriptEngine ENGINE = new ScriptEngineManager(null).getEngineByName("Nashorn");
 

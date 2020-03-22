@@ -1,16 +1,14 @@
 package com.happyzleaf.pixelgenocide;
 
 import com.google.inject.Inject;
+import com.happyzleaf.pixelgenocide.placeholder.PlaceholderBridge;
 import com.happyzleaf.pixelgenocide.util.TimedTask;
-import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
-import net.minecraft.entity.Entity;
-import net.minecraft.world.World;
-import net.minecraft.world.storage.WorldInfo;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
@@ -27,16 +25,17 @@ import org.spongepowered.api.text.channel.MessageChannel;
 import org.spongepowered.api.text.channel.MessageReceiver;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.format.TextStyles;
-import org.spongepowered.api.text.serializer.TextSerializers;
+import org.spongepowered.api.world.World;
+import org.spongepowered.api.world.storage.WorldProperties;
 
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Optional;
 
 @Plugin(id = PixelGenocide.PLUGIN_ID, name = PixelGenocide.PLUGIN_NAME, version = PixelGenocide.VERSION, authors = {"happyzleaf"},
-		description = "PixelGenocide cleans all the non-special pixelmon in the server to reduce lag.",
-		url = "http://happyzleaf.com/", dependencies = @Dependency(id = "pixelmon", version = "7.2.2"))
+		description = "PixelGenocide wipes away useless pokémon to help prevent lag.",
+		url = "http://happyzleaf.com/",
+		dependencies = {@Dependency(id = "pixelmon", version = "7.2.2"), @Dependency(id = "placeholderapi", optional = true)})
 public class PixelGenocide {
 	public static final String PLUGIN_ID = "pixelgenocide";
 	public static final String PLUGIN_NAME = "PixelGenocide";
@@ -44,7 +43,7 @@ public class PixelGenocide {
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(PLUGIN_NAME);
 
-	private static TimedTask task = new TimedTask(PixelGenocide::cleanPixelmon, s -> MessageChannel.TO_ALL.send(PGConfig.getMessageTimer(s)));
+	public static TimedTask task = new TimedTask(Wipe::all, s -> MessageChannel.TO_ALL.send(Config.getMessageTimer(s)));
 
 	private static URL getWebsite() {
 		try {
@@ -64,95 +63,71 @@ public class PixelGenocide {
 
 	@Listener
 	public void init(GameInitializationEvent event) {
-		PGConfig.init(configLoader, configFile);
+		Config.init(configLoader, configFile);
 
-		CommandSpec clean = CommandSpec.builder()
-				.arguments(GenericArguments.optional(GenericArguments.world(Text.of("world"))))
-				.executor((src, args) -> {
-					Optional<WorldInfo> optWorldInfo = args.getOne("world");
-					if (optWorldInfo.isPresent()) {
-						WorldInfo worldInfo = optWorldInfo.get();
-						Optional<org.spongepowered.api.world.World> optWorld = Sponge.getServer().getWorld(worldInfo.getWorldName());
-						if (optWorld.isPresent()) {
-							org.spongepowered.api.world.World world = optWorld.get();
-							if (src.hasPermission(PLUGIN_ID + ".command.cleanpixelmon." + world.getName())) {
-								int quantity = cleanPixelmon((World) world);
-								if (quantity > 0) {
-									MessageChannel.TO_ALL.send(PGConfig.getMessageCleaned(quantity));
+		Sponge.getCommandManager().register(this, CommandSpec.builder()
+				.child(CommandSpec.builder()
+						.arguments(GenericArguments.optional(GenericArguments.onlyOne(GenericArguments.world(Text.of("world")))))
+						.executor((src, args) -> {
+							WorldProperties worldInfo = args.<WorldProperties>getOne("world").orElse(null);
+							if (worldInfo == null) {
+								if (!src.hasPermission(PLUGIN_ID + ".command.wipepokemon")) {
+									throw new CommandException(Text.of(TextColors.RED, "You don't have the permission to wipe all the worlds!"));
 								}
-								src.sendMessage(Text.of(TextColors.GREEN, "Successfully cleaned all the non-special pixelmon in " + world.getName()));
+
+								int wiped = Wipe.all();
+								if (wiped > 0) {
+									MessageChannel.TO_ALL.send(Config.getMessageWiped(wiped));
+								}
+
+								src.sendMessage(Text.of(TextColors.GREEN, "Successfully wiped away useless pokémon in every world."));
 								return CommandResult.success();
-							} else {
-								src.sendMessage(Text.of(TextColors.RED, "You don't have the permission to clean that world!"));
 							}
-						} else {
-							src.sendMessage(Text.of(TextColors.RED, "There's a problem with the world " + worldInfo.getWorldName() + "."));
-						}
-					} else {
-						if (src.hasPermission(PLUGIN_ID + ".command.cleanpixelmon")) {
-							cleanPixelmon();
-							src.sendMessage(Text.of(TextColors.GREEN, "Successfully cleaned all the non-special pixelmon in all the worlds!"));
+
+							World world = Sponge.getServer().getWorld(worldInfo.getUniqueId()).orElse(null);
+							if (world == null) {
+								throw new CommandException(Text.of(TextColors.RED, String.format("There's a problem with the world %s.", worldInfo.getWorldName())));
+							}
+
+							if (!src.hasPermission(PLUGIN_ID + ".command.wipepokemon." + world.getName())) {
+								throw new CommandException(Text.of(TextColors.RED, "You don't have the permission to wipe that world!"));
+							}
+
+							int wiped = Wipe.world((net.minecraft.world.World) world);
+							if (wiped > 0) {
+								MessageChannel.world(world).send(Config.getMessageWiped(wiped));
+							}
+
+							src.sendMessage(Text.of(TextColors.GREEN, String.format("Successfully wiped away useless pokémon in %s.", world.getName())));
 							return CommandResult.success();
-						} else {
-							src.sendMessage(Text.of(TextColors.RED, "You don't have the permission to clean all the worlds!"));
-						}
-					}
-					return CommandResult.empty();
-				})
-				.build();
-		CommandSpec main = CommandSpec.builder()
-				.child(clean, "clean")
+						})
+						.build(), "wipe")
 				.executor((src, args) -> {
 					src.sendMessage(Text.of(TextColors.GREEN, PLUGIN_NAME, TextColors.DARK_GREEN, " v" + VERSION + " made by ").concat(Text.builder("happyzleaf").style(TextStyles.UNDERLINE).color(TextColors.GREEN).onHover(TextActions.showText(Text.of(TextColors.GREEN, "Click to go to my *wonderful* website"))).onClick(TextActions.openUrl(getWebsite())).build()).concat(Text.of(TextColors.GREEN, ".")));
 					return CommandResult.success();
 				})
-				.build();
-		Sponge.getCommandManager().register(this, main, PLUGIN_ID);
+				.build(), PLUGIN_ID);
 
 		LOGGER.info(PLUGIN_NAME + " by happyzleaf loaded! (https://happyzleaf.com/)");
 	}
 
 	@Listener
 	public void onServerStart(GameStartedServerEvent event) {
-		task.setDuration(PGConfig.timer, PGConfig.timerRate);
+		task.setDuration(Config.timer, Config.timerRate);
 		task.start(this);
-	}
 
-	public static void cleanPixelmon() {
-		int quantity = 0;
-		for (org.spongepowered.api.world.World world : Sponge.getServer().getWorlds()) {
-			quantity += cleanPixelmon((World) world);
+		if (Sponge.getPluginManager().isLoaded("placeholderapi")) {
+			PlaceholderBridge.init(this);
 		}
-		if (quantity > 0) {
-			MessageChannel.TO_ALL.send(PGConfig.getMessageCleaned(quantity));
-		}
-	}
-
-	public static int cleanPixelmon(World world) {
-		int quantity = 0;
-		for (Entity entity : world.loadedEntityList) {
-			if (entity instanceof EntityPixelmon) {
-				EntityPixelmon pixelmon = (EntityPixelmon) entity;
-				if (!(!pixelmon.canDespawn || pixelmon.hasOwner() || pixelmon.battleController != null || pixelmon.getPokemonData().isInRanch() || PGConfig.shouldKeepPokemon(pixelmon))) {
-					pixelmon.unloadEntity();
-					quantity++;
-				}
-			}
-		}
-		return quantity;
 	}
 
 	@Listener
 	public void onReload(GameReloadEvent event) {
 		task.cancel();
-		PGConfig.loadConfig();
-		task.setDuration(PGConfig.timer, PGConfig.timerRate);
+		Config.loadConfig();
+		task.setDuration(Config.timer, Config.timerRate);
 		task.start(this);
 
-		MessageReceiver receiver = Sponge.getServer().getConsole();
-		if (event.getSource() instanceof MessageReceiver) {
-			receiver = (MessageReceiver) event.getSource();
-		}
-		receiver.sendMessage(Text.of(TextColors.GREEN, "[PixelGenocide] Reloaded! The timer has been restarted."));
+		((MessageReceiver) event.getSource()).sendMessage(Text.of(TextColors.GREEN, "[PixelGenocide] Reloaded! The timer has been restarted."));
 	}
 }

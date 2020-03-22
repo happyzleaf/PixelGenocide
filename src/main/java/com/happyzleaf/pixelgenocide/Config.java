@@ -1,6 +1,5 @@
 package com.happyzleaf.pixelgenocide;
 
-import com.flowpowered.math.vector.Vector3d;
 import com.google.common.reflect.TypeToken;
 import com.happyzleaf.pixelgenocide.util.GameTime;
 import com.happyzleaf.pixelgenocide.util.Helper;
@@ -14,7 +13,6 @@ import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.Entity;
-import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.serializer.TextSerializers;
@@ -24,9 +22,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
-public class PGConfig {
+public class Config {
 	private static ConfigurationLoader<CommentedConfigurationNode> loader;
 	private static CommentedConfigurationNode node;
 	private static File file;
@@ -59,8 +56,8 @@ public class PGConfig {
 	}
 	
 	public static void init(ConfigurationLoader<CommentedConfigurationNode> loader, File file) {
-		PGConfig.loader = loader;
-		PGConfig.file = file;
+		Config.loader = loader;
+		Config.file = file;
 		
 		TypeSerializers.getDefaultSerializers().registerType(TypeToken.of(GameTime.class), new GameTime.Serializer());
 		TypeSerializers.getDefaultSerializers().registerType(TypeToken.of(TimedTask.Info.class), new TimedTask.InfoSerializer());
@@ -180,8 +177,8 @@ public class PGConfig {
 		return TextSerializers.FORMATTING_CODE.deserialize(messageTimer.replace("%timer%", Helper.toHuman(remainingSeconds)));
 	}
 
-	public static Text getMessageCleaned(int quantity) {
-		return TextSerializers.FORMATTING_CODE.deserialize(PGConfig.messageCleaned.replace("%quantity%", "" + quantity).replace("HAVEHAS", quantity == 1 ? "have" : "has"));
+	public static Text getMessageWiped(int quantity) {
+		return TextSerializers.FORMATTING_CODE.deserialize(Config.messageCleaned.replace("%quantity%", "" + quantity).replace("HAVEHAS", quantity == 1 ? "have" : "has"));
 	}
 	
 	public static boolean shouldKeepPokemon(EntityPixelmon pixelmon) {
@@ -194,7 +191,7 @@ public class PGConfig {
 				|| keepShinies && pixelmon.getPokemonData().isShiny()
 				|| keepWithPokerus && pixelmon.getPokerus().isPresent()
 				|| keepWithParticles && hasParticles((Entity) pixelmon)
-				|| keepWithinSpecialPlayer && isWithinSpecialPlayer(pixelmon));
+				|| keepWithinSpecialPlayer && isWithinSpecialPlayer((Entity) pixelmon));
 	}
 	
 	private static boolean hasParticles(Entity entity) {
@@ -205,16 +202,12 @@ public class PGConfig {
 //				//the entity has an aura which id is "key"
 //			}
 //		}
-		return entity.getKeys().stream().anyMatch(key -> key.getId().equals("entity-particles:id")); //Will provide support for "active" value later
+		return entity.getKeys().stream().anyMatch(key -> key.getId().equals("entity-particles:id")); // Will provide support for "active" value later
 	}
 	
-	private static boolean isWithinSpecialPlayer(net.minecraft.entity.Entity entity) {
-		Vector3d pos = new Vector3d(entity.posX, entity.posY, entity.posZ);
-		for (Player player : Sponge.getServer().getOnlinePlayers().stream().filter(player -> player.hasPermission(PixelGenocide.PLUGIN_ID + ".specialplayer")).collect(Collectors.toList())) {
-			if (player.getLocation().getPosition().distance(pos) <= maxSpecialPlayerBlocks) { //Player#getPosition() drops the support for API 7.0.0
-				return true;
-			}
-		}
-		return false;
+	private static boolean isWithinSpecialPlayer(Entity entity) {
+		return Sponge.getServer().getOnlinePlayers().stream()
+				.filter(player -> player.hasPermission(PixelGenocide.PLUGIN_ID + ".specialplayer"))
+				.anyMatch(player -> player.getPosition().distance(entity.getLocation().getPosition()) <= maxSpecialPlayerBlocks);
 	}
 }

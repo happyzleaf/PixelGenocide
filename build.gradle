@@ -36,10 +36,14 @@ minecraft {
 
 repositories {
     mavenCentral()
+    maven {
+        url 'https://jitpack.io'
+    }
 }
 
 dependencies {
     compile 'org.spongepowered:spongeapi:7.1.0-SNAPSHOT'
+    compile 'com.github.rojo8399:PlaceholderAPI:master-SNAPSHOT'
 }
 
 processResources {
