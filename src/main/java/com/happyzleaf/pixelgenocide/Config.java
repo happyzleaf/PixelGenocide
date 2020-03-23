@@ -1,6 +1,7 @@
 package com.happyzleaf.pixelgenocide;
 
 import com.google.common.reflect.TypeToken;
+import com.happyzleaf.pixelgenocide.placeholder.PlaceholderBridge;
 import com.happyzleaf.pixelgenocide.util.GameTime;
 import com.happyzleaf.pixelgenocide.util.Helper;
 import com.happyzleaf.pixelgenocide.util.TimedTask;
@@ -15,7 +16,6 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.serializer.TextSerializers;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,10 +29,10 @@ public class Config {
 	private static File file;
 	
 	public static GameTime timer = new GameTime(10, TimeUnit.MINUTES);
-	public static String messageTimer = "&4All non-special pixelmon will despawn in &c%timer%&4.";
+	private static String messageTimer = "&4Useless pok\u00E9mon will be wiped away in &c%timer_human%&4.";
 	public static TimedTask.Info timerRate = new TimedTask.Info("s <= 5 ? 1 : s <= 15 ? 5 : s <= 60 ? 30 : s <= 600 ? 300 : s <= 1800 ? 600 : 1800");
 
-	private static String messageCleaned = "&7%quantity% pixelmon have been cleaned.";
+	private static String messageCleaned = "&7%wiped% pok\u00E9mon have been wiped away.";
 	private static int maxSpecialPlayerBlocks = 100;
 	
 	private static boolean keepLegendaries = true;
@@ -140,8 +140,8 @@ public class Config {
 		miscellaneous.getNode("maxSpecialPlayerBlocks").setComment("How many blocks the pixelmon will not be removed within a special player. See keep.withinSpecialPlayer for more details.").setValue(maxSpecialPlayerBlocks);
 		
 		CommentedConfigurationNode message = miscellaneous.getNode("message");
-		message.getNode("timer").setComment("Placeholders: %timer%.").setValue(messageTimer);
-		message.getNode("cleaned").setComment("Placeholders: %quantity%.").setValue(messageCleaned);
+		message.getNode("timer").setComment("Placeholders: %timer_seconds% %timer_human%.").setValue(messageTimer);
+		message.getNode("cleaned").setComment("Placeholders: %wiped%.").setValue(messageCleaned);
 		
 		CommentedConfigurationNode keep = node.getNode("keep").setComment("Whether the pixelmon should be kept.");
 		keep.getNode("legendaries").setValue(keepLegendaries);
@@ -174,13 +174,23 @@ public class Config {
 	}
 
 	public static Text getMessageTimer(long remainingSeconds) {
-		return TextSerializers.FORMATTING_CODE.deserialize(messageTimer.replace("%timer%", Helper.toHuman(remainingSeconds)));
+		return PlaceholderBridge.parseText(
+				messageTimer.replace("%timer_seconds%", String.valueOf(remainingSeconds))
+						.replace("%timer_human%", Helper.toHuman(remainingSeconds)),
+				null,
+				null
+		);
 	}
 
-	public static Text getMessageWiped(int quantity) {
-		return TextSerializers.FORMATTING_CODE.deserialize(Config.messageCleaned.replace("%quantity%", "" + quantity).replace("HAVEHAS", quantity == 1 ? "have" : "has"));
+	public static Text getMessageWiped(int wiped) {
+		return PlaceholderBridge.parseText(
+				Config.messageCleaned.replace("%wiped%", String.valueOf(wiped))
+						.replace("HAVEHAS", wiped == 1 ? "have" : "has"),
+				null,
+				null
+		);
 	}
-	
+
 	public static boolean shouldKeepPokemon(EntityPixelmon pixelmon) {
 		String name = pixelmon.getPokemonName();
 		return whitelist.contains(name)

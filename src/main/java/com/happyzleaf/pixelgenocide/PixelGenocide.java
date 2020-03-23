@@ -33,7 +33,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 @Plugin(id = PixelGenocide.PLUGIN_ID, name = PixelGenocide.PLUGIN_NAME, version = PixelGenocide.VERSION, authors = {"happyzleaf"},
-		description = "PixelGenocide wipes away useless pokémon to help prevent lag.",
+		description = "PixelGenocide wipes away useless pok\u00E9mon to help prevent lag.",
 		url = "http://happyzleaf.com/",
 		dependencies = {@Dependency(id = "pixelmon", version = "7.2.2"), @Dependency(id = "placeholderapi", optional = true)})
 public class PixelGenocide {
@@ -43,7 +43,12 @@ public class PixelGenocide {
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(PLUGIN_NAME);
 
-	public static TimedTask task = new TimedTask(Wipe::all, s -> MessageChannel.TO_ALL.send(Config.getMessageTimer(s)));
+	public static TimedTask task = new TimedTask(() -> {
+		int wiped = Wipe.all();
+		if (wiped > 0) {
+			MessageChannel.TO_ALL.send(Config.getMessageWiped(wiped));
+		}
+	}, s -> MessageChannel.TO_ALL.send(Config.getMessageTimer(s)));
 
 	private static URL getWebsite() {
 		try {
@@ -80,7 +85,7 @@ public class PixelGenocide {
 									MessageChannel.TO_ALL.send(Config.getMessageWiped(wiped));
 								}
 
-								src.sendMessage(Text.of(TextColors.GREEN, "Successfully wiped away useless pokémon in every world."));
+								src.sendMessage(Text.of(TextColors.GREEN, "Successfully wiped away useless pok\u00E9mon in every world."));
 								return CommandResult.success();
 							}
 
@@ -93,12 +98,12 @@ public class PixelGenocide {
 								throw new CommandException(Text.of(TextColors.RED, "You don't have the permission to wipe that world!"));
 							}
 
-							int wiped = Wipe.world((net.minecraft.world.World) world);
+							int wiped = Wipe.world(world);
 							if (wiped > 0) {
-								MessageChannel.world(world).send(Config.getMessageWiped(wiped));
+								MessageChannel.combined(MessageChannel.world(world), MessageChannel.fixed(src)).send(Config.getMessageWiped(wiped));
 							}
 
-							src.sendMessage(Text.of(TextColors.GREEN, String.format("Successfully wiped away useless pokémon in %s.", world.getName())));
+							src.sendMessage(Text.of(TextColors.GREEN, String.format("Successfully wiped away useless pok\u00E9mon in %s.", world.getName())));
 							return CommandResult.success();
 						})
 						.build(), "wipe")
@@ -116,9 +121,7 @@ public class PixelGenocide {
 		task.setDuration(Config.timer, Config.timerRate);
 		task.start(this);
 
-		if (Sponge.getPluginManager().isLoaded("placeholderapi")) {
-			PlaceholderBridge.init(this);
-		}
+		PlaceholderBridge.init(this);
 	}
 
 	@Listener
