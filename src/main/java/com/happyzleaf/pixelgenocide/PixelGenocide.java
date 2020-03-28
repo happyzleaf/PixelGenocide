@@ -1,7 +1,6 @@
 package com.happyzleaf.pixelgenocide;
 
 import com.happyzleaf.pixelgenocide.placeholder.PlaceholderBridge;
-import com.pixelmonmod.pixelmon.api.pokemon.PokemonSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.api.Sponge;
@@ -99,7 +98,6 @@ public class PixelGenocide {
 	@Listener
 	public void onServerStart(GameStartedServerEvent event) {
 		PlaceholderBridge.init(this);
-		PokemonSpec.extraSpecTypes.add(new NicknameSpec(null));
 	}
 
 	@Listener

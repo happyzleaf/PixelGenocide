@@ -54,44 +54,12 @@ public class Conditions {
 	}
 
 	public boolean test(EntityPixelmon pokemon) {
-		boolean debug = "debug".equals(pokemon.getPokemonData().getNickname());
-		if (debug) {
-			System.out.println();
-			System.out.println("========================= Found 'debug'! =========================");
-			System.out.println("Found 'debug'!");
-			System.out.println();
-		}
 		for (Condition c : conditions) {
-			if (debug) {
-				System.out.println();
-				System.out.println("Passing 'debug' to the condition: " + c.toString());
-			}
 			if (c.test(pokemon)) {
-				if (debug) {
-					System.out.println("It passed the test.");
-					if (c.isAnti()) {
-						System.out.println("And it's being removed. RIP LITTLE DEBUG ANGEL.");
-					} else {
-						System.out.println("And it survived!");
-					}
-					System.out.println("==================================================================");
-					System.out.println();
-					System.out.println();
-				}
-
 				return !c.isAnti();
 			}
-			if (debug) {
-				System.out.println("No luck");
-				System.out.println();
-			}
 		}
 
-		if (debug) {
-			System.out.println("Unfortunately no conditions saved him. RIP. You will be missed <3");
-			System.out.println("==================================================================");
-			System.out.println();
-		}
 		return false;
 	}
 }
