@@ -4,7 +4,7 @@
 		"name": "PixelGenocide",
 		"version": "${version}",
 		"mcversion": "${mcversion}",
-		"description": "PixelGenocide wipes away useless pokémon to help prevent lag.",
+		"description": "PixelGenocide wipes away useless pokémon to prevent lag.",
 		"url": "http://happyzleaf.com/",
 		"authorList": ["happyzleaf"],
 		"requiredMods": ["pixelmon@7.2.2"],

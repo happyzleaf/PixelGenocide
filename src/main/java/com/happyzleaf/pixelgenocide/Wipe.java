@@ -21,11 +21,7 @@ public class Wipe {
 		int wiped = (int) ((net.minecraft.world.World) world).loadedEntityList.stream()
 				.filter(entity -> entity instanceof EntityPixelmon)
 				.map(entity -> (EntityPixelmon) entity)
-				.filter(pokemon -> !(!pokemon.canDespawn // If the pokémon can despawn
-						|| pokemon.hasOwner() // doesn't have any owner
-						|| pokemon.battleController != null // isn't in a battle
-						|| pokemon.getPokemonData().isInRanch() // isn't in a ranch
-						|| Config.shouldKeepPokemon(pokemon)))
+				.filter(pokemon -> !Config.getConditions().test(pokemon)) // If the pokémon doesn't meet our criteria
 				.peek(EntityPixelmon::unloadEntity) // terminate its existence :)
 				.count();
 

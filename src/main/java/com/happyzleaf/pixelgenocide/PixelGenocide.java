@@ -1,10 +1,7 @@
 package com.happyzleaf.pixelgenocide;
 
-import com.google.inject.Inject;
 import com.happyzleaf.pixelgenocide.placeholder.PlaceholderBridge;
-import com.happyzleaf.pixelgenocide.util.TimedTask;
-import ninja.leaping.configurate.commented.CommentedConfigurationNode;
-import ninja.leaping.configurate.loader.ConfigurationLoader;
+import com.pixelmonmod.pixelmon.api.pokemon.PokemonSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.api.Sponge;
@@ -12,7 +9,6 @@ import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
-import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.GameReloadEvent;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
@@ -28,27 +24,19 @@ import org.spongepowered.api.text.format.TextStyles;
 import org.spongepowered.api.world.World;
 import org.spongepowered.api.world.storage.WorldProperties;
 
-import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-@Plugin(id = PixelGenocide.PLUGIN_ID, name = PixelGenocide.PLUGIN_NAME, version = PixelGenocide.VERSION, authors = {"happyzleaf"},
-		description = "PixelGenocide wipes away useless pok\u00E9mon to help prevent lag.",
-		url = "http://happyzleaf.com/",
+@Plugin(id = PixelGenocide.PLUGIN_ID, name = PixelGenocide.PLUGIN_NAME, version = PixelGenocide.VERSION,
+		description = "PixelGenocide wipes away useless pok\u00E9mon to prevent lag.",
+		authors = {"happyzleaf"}, url = "http://happyzleaf.com/",
 		dependencies = {@Dependency(id = "pixelmon", version = "7.2.2"), @Dependency(id = "placeholderapi", optional = true)})
 public class PixelGenocide {
 	public static final String PLUGIN_ID = "pixelgenocide";
 	public static final String PLUGIN_NAME = "PixelGenocide";
-	public static final String VERSION = "1.0.6";
+	public static final String VERSION = "1.1.0";
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(PLUGIN_NAME);
-
-	public static TimedTask task = new TimedTask(() -> {
-		int wiped = Wipe.all();
-		if (wiped > 0) {
-			MessageChannel.TO_ALL.send(Config.getMessageWiped(wiped));
-		}
-	}, s -> MessageChannel.TO_ALL.send(Config.getMessageTimer(s)));
 
 	private static URL getWebsite() {
 		try {
@@ -58,17 +46,9 @@ public class PixelGenocide {
 		}
 	}
 
-	@Inject
-	@DefaultConfig(sharedRoot = true)
-	ConfigurationLoader<CommentedConfigurationNode> configLoader;
-
-	@Inject
-	@DefaultConfig(sharedRoot = true)
-	private File configFile;
-
 	@Listener
 	public void init(GameInitializationEvent event) {
-		Config.init(configLoader, configFile);
+		Config.init(this);
 
 		Sponge.getCommandManager().register(this, CommandSpec.builder()
 				.child(CommandSpec.builder()
@@ -118,19 +98,13 @@ public class PixelGenocide {
 
 	@Listener
 	public void onServerStart(GameStartedServerEvent event) {
-		task.setDuration(Config.timer, Config.timerRate);
-		task.start(this);
-
 		PlaceholderBridge.init(this);
+		PokemonSpec.extraSpecTypes.add(new NicknameSpec(null));
 	}
 
 	@Listener
 	public void onReload(GameReloadEvent event) {
-		task.cancel();
 		Config.loadConfig();
-		task.setDuration(Config.timer, Config.timerRate);
-		task.start(this);
-
 		((MessageReceiver) event.getSource()).sendMessage(Text.of(TextColors.GREEN, "[PixelGenocide] Reloaded! The timer has been restarted."));
 	}
 }

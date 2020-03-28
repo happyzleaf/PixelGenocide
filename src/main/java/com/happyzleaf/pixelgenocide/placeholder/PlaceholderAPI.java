@@ -1,5 +1,6 @@
 package com.happyzleaf.pixelgenocide.placeholder;
 
+import com.happyzleaf.pixelgenocide.Config;
 import com.happyzleaf.pixelgenocide.PixelGenocide;
 import com.happyzleaf.pixelgenocide.Wipe;
 import com.happyzleaf.pixelgenocide.util.Helper;
@@ -49,9 +50,9 @@ public class PlaceholderAPI {
 
 				switch (args[1]) {
 					case "seconds":
-						return PixelGenocide.task.getRemainingSeconds();
+						return Config.getTask().getRemainingSeconds();
 					case "human":
-						return Helper.toHuman(PixelGenocide.task.getRemainingSeconds());
+						return Helper.toHuman(Config.getTask().getRemainingSeconds());
 					default:
 						throw new NoValueException("Wrong input.", new ArrayList<>(Arrays.asList("seconds", "human")));
 				}
