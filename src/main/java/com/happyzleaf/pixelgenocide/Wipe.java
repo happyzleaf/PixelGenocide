@@ -7,25 +7,26 @@ import org.spongepowered.api.world.storage.WorldProperties;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Wipe {
 	private static Map<String, Integer> lastWipe = new HashMap<>();
 
-	public static int all() {
+	public static Set<EntityPixelmon> all() {
 		lastWipe.clear();
 
-		return Sponge.getServer().getWorlds().stream().mapToInt(Wipe::world).sum();
+		return Sponge.getServer().getWorlds().stream().flatMap(world -> world(world).stream()).collect(Collectors.toSet());
 	}
 
-	public static int world(World world) {
-		int wiped = (int) ((net.minecraft.world.World) world).loadedEntityList.stream()
+	public static Set<EntityPixelmon> world(World world) {
+		Set<EntityPixelmon> wiped = ((net.minecraft.world.World) world).loadedEntityList.stream()
 				.filter(entity -> entity instanceof EntityPixelmon)
 				.map(entity -> (EntityPixelmon) entity)
-				.filter(pokemon -> !Config.getConditions().test(pokemon)) // If the pokémon doesn't meet our criteria
-				.peek(EntityPixelmon::unloadEntity) // terminate its existence :)
-				.count();
+				.filter(pokemon -> !Config.getConditions().test(pokemon))
+				.collect(Collectors.toSet());
 
-		lastWipe.put(world.getProperties().getWorldName(), wiped);
+		lastWipe.put(world.getProperties().getWorldName(), wiped.size());
 
 		return wiped;
 	}

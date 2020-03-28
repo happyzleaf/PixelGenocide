@@ -67,7 +67,9 @@ public class SpeciesCondition implements Condition {
 
 			value.getNode("species").setValue(new TypeToken<List<String>>() {}, obj.species.stream().map(EnumSpecies::getPokemonName).collect(Collectors.toList()));
 
-			value.getNode("enabled").setValue(obj.enabled);
+			if (!obj.enabled || !value.getNode("enabled").isVirtual()) {
+				value.getNode("enabled").setValue(obj.enabled);
+			}
 		}
 
 		@Nullable
@@ -88,7 +90,7 @@ public class SpeciesCondition implements Condition {
 				species.add(s);
 			}
 
-			boolean enabled = value.getNode("enabled").getBoolean();
+			boolean enabled = value.getNode("enabled").getBoolean(true);
 
 			return new SpeciesCondition(species, enabled);
 		}

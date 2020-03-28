@@ -6,17 +6,20 @@ import com.happyzleaf.pixelgenocide.placeholder.PlaceholderBridge;
 import com.happyzleaf.pixelgenocide.util.GameTime;
 import com.happyzleaf.pixelgenocide.util.Helper;
 import com.happyzleaf.pixelgenocide.util.TimedTask;
+import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.ConfigRoot;
+import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.channel.MessageChannel;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class Config {
@@ -29,15 +32,20 @@ public class Config {
 	private static TimedTask.Info timerRate = new TimedTask.Info("s <= 5 ? 1 : s <= 15 ? 5 : s <= 60 ? 30 : s <= 600 ? 300 : s <= 1800 ? 600 : 1800");
 
 	private static String messageTimer = "&4Useless pok\u00E9mon will be wiped away in &c%timer_human%&4.";
-	private static String messageCleaned = "&7%wiped% pok\u00E9mon have been wiped away.";
+	private static String messageCleaned = "&a%wiped% pok\u00E9mon have been wiped away.";
 
 	private static Conditions conditions = new Conditions();
 
 	private static TimedTask task = new TimedTask(() -> {
-		int wiped = Wipe.all();
-		if (wiped > 0) {
-			MessageChannel.TO_ALL.send(getMessageWiped(wiped));
-		}
+		Task.builder().async().execute(() -> {
+			Set<EntityPixelmon> toWipe = Wipe.all();
+			Task.builder().execute(() -> {
+				int wiped = (int) toWipe.stream().peek(EntityPixelmon::unloadEntity).count();
+				if (wiped > 0) {
+					MessageChannel.TO_ALL.send(getMessageWiped(wiped));
+				}
+			}).submit(plugin);
+		}).submit(plugin);
 	}, s -> MessageChannel.TO_ALL.send(getMessageTimer(s)));
 
 	public static void init(Object plugin) {

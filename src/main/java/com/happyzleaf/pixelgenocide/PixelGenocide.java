@@ -1,6 +1,7 @@
 package com.happyzleaf.pixelgenocide;
 
 import com.happyzleaf.pixelgenocide.placeholder.PlaceholderBridge;
+import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.api.Sponge;
@@ -59,7 +60,7 @@ public class PixelGenocide {
 									throw new CommandException(Text.of(TextColors.RED, "You don't have the permission to wipe all the worlds!"));
 								}
 
-								int wiped = Wipe.all();
+								int wiped = (int) Wipe.all().stream().peek(EntityPixelmon::unloadEntity).count();
 								if (wiped > 0) {
 									MessageChannel.TO_ALL.send(Config.getMessageWiped(wiped));
 								}
@@ -77,7 +78,7 @@ public class PixelGenocide {
 								throw new CommandException(Text.of(TextColors.RED, "You don't have the permission to wipe that world!"));
 							}
 
-							int wiped = Wipe.world(world);
+							int wiped = (int) Wipe.world(world).stream().peek(EntityPixelmon::unloadEntity).count();
 							if (wiped > 0) {
 								MessageChannel.combined(MessageChannel.world(world), MessageChannel.fixed(src)).send(Config.getMessageWiped(wiped));
 							}

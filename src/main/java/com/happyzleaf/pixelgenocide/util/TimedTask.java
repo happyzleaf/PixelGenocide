@@ -56,9 +56,7 @@ public class TimedTask {
 	}
 
 	public void start(Object plugin) {
-		if (task != null) {
-			cancel();
-		}
+		cancel();
 
 		if (duration == null) {
 			throw new RuntimeException("You must provide a duration before starting the task.");
