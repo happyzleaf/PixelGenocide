@@ -34,12 +34,14 @@ public class Conditions {
 		conditions.clear();
 
 		conditions.add(IS_VALID);
-		conditions.add(whitelist = node.getNode("whitelist").getValue(TypeToken.of(SpeciesCondition.class)).setWhitelist());
-		conditions.add(blacklist = node.getNode("blacklist").getValue(TypeToken.of(SpeciesCondition.class)).setBlacklist());
-		conditions.addAll(specs = new HashSet<>(node.getNode("specs").getList(TypeToken.of(SpecCondition.class))));
-		conditions.add(ultraBeasts = node.getNode("ultraBeasts").getValue(TypeToken.of(UltraBeastCondition.class)));
-		conditions.add(withParticles = node.getNode("withParticles").getValue(TypeToken.of(WithParticlesCondition.class)));
-		conditions.add(withinSpecialPlayer = node.getNode("withinSpecialPlayer").getValue(TypeToken.of(WithinSpecialPlayerCondition.class)));
+		conditions.add(whitelist = node.getNode("whitelist").getValue(TypeToken.of(SpeciesCondition.class), whitelist).setWhitelist());
+		conditions.add(blacklist = node.getNode("blacklist").getValue(TypeToken.of(SpeciesCondition.class), blacklist).setBlacklist());
+		conditions.addAll(specs = Optional.ofNullable(node.getNode("specs").getList(TypeToken.of(SpecCondition.class), (List<SpecCondition>) null))
+				.map(s -> ((Set<SpecCondition>) new HashSet<>(s)))
+				.orElse(specs));
+		conditions.add(ultraBeasts = node.getNode("ultraBeasts").getValue(TypeToken.of(UltraBeastCondition.class), ultraBeasts));
+		conditions.add(withParticles = node.getNode("withParticles").getValue(TypeToken.of(WithParticlesCondition.class), withParticles));
+		conditions.add(withinSpecialPlayer = node.getNode("withinSpecialPlayer").getValue(TypeToken.of(WithinSpecialPlayerCondition.class), withinSpecialPlayer));
 
 		conditions.removeIf(c -> !c.isEnabled());
 	}

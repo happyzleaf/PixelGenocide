@@ -1,13 +1,12 @@
 package com.happyzleaf.pixelgenocide;
 
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
+import net.minecraft.entity.Entity;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.world.World;
 import org.spongepowered.api.world.storage.WorldProperties;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Wipe {
@@ -20,7 +19,7 @@ public class Wipe {
 	}
 
 	public static Set<EntityPixelmon> world(World world) {
-		Set<EntityPixelmon> wiped = ((net.minecraft.world.World) world).loadedEntityList.stream()
+		Set<EntityPixelmon> wiped = new ArrayList<>(((net.minecraft.world.World) world).loadedEntityList).stream()
 				.filter(entity -> entity instanceof EntityPixelmon)
 				.map(entity -> (EntityPixelmon) entity)
 				.filter(pokemon -> !Config.getConditions().test(pokemon))

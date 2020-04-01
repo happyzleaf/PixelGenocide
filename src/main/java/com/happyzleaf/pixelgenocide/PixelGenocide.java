@@ -34,7 +34,7 @@ import java.net.URL;
 public class PixelGenocide {
 	public static final String PLUGIN_ID = "pixelgenocide";
 	public static final String PLUGIN_NAME = "PixelGenocide";
-	public static final String VERSION = "1.1.0";
+	public static final String VERSION = "1.1.0-hotfix";
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(PLUGIN_NAME);
 

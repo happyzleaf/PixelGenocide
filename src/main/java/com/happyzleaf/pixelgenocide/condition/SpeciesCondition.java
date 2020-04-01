@@ -12,18 +12,20 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class SpeciesCondition implements Condition {
 	private final Set<EnumSpecies> species = new HashSet<>();
 	private final boolean enabled;
 	private boolean anti = false;
 
-	public SpeciesCondition(Collection<EnumSpecies> species, boolean enabled) {
-		this.species.addAll(species);
+	public SpeciesCondition(boolean enabled, Collection<EnumSpecies> species) {
 		this.enabled = enabled;
+		this.species.addAll(checkNotNull(species, "species"));
 	}
 
 	public SpeciesCondition(boolean enabled, EnumSpecies... species) {
-		this(Arrays.asList(species), enabled);
+		this(enabled, Arrays.asList(species));
 	}
 
 	@Override
@@ -65,23 +67,18 @@ public class SpeciesCondition implements Condition {
 				throw new ObjectMappingException("The species condition is null.");
 			}
 
-			value.getNode("species").setValue(new TypeToken<List<String>>() {}, obj.species.stream().map(EnumSpecies::getPokemonName).collect(Collectors.toList()));
+			value.getNode("enabled").setValue(obj.enabled);
 
-			if (!obj.enabled || !value.getNode("enabled").isVirtual()) {
-				value.getNode("enabled").setValue(obj.enabled);
-			}
+			value.getNode("species").setValue(new TypeToken<List<String>>() {}, obj.species.stream().map(EnumSpecies::getPokemonName).collect(Collectors.toList()));
 		}
 
 		@Nullable
 		@Override
 		public SpeciesCondition deserialize(@NonNull TypeToken<?> type, @NonNull ConfigurationNode value) throws ObjectMappingException {
-			Set<String> names = new HashSet<>(value.getNode("species").getList(TypeToken.of(String.class), (List<String>) null));
-			if (names == null) {
-				throw new ObjectMappingException("The node does not contain a list of names.");
-			}
+			boolean enabled = value.getNode("enabled").getBoolean(true);
 
-			Set<EnumSpecies> species = new HashSet<>(names.size());
-			for (String name : names) {
+			Set<EnumSpecies> species = new HashSet<>();
+			for (String name : value.getNode("species").getList(TypeToken.of(String.class), ArrayList::new)) {
 				EnumSpecies s = EnumSpecies.getFromNameAnyCaseNoTranslate(name);
 				if (s == null) {
 					throw new ObjectMappingException(String.format("The species '%s' is nowhere to be found.", name));
@@ -90,9 +87,7 @@ public class SpeciesCondition implements Condition {
 				species.add(s);
 			}
 
-			boolean enabled = value.getNode("enabled").getBoolean(true);
-
-			return new SpeciesCondition(species, enabled);
+			return new SpeciesCondition(enabled, species);
 		}
 	}
 }
