@@ -57,9 +57,12 @@ public class Config {
 
 		TypeSerializers.getDefaultSerializers().registerType(TypeToken.of(GameTime.class), new GameTime.Serializer());
 		TypeSerializers.getDefaultSerializers().registerType(TypeToken.of(TimedTask.Info.class), new TimedTask.InfoSerializer());
+		TypeSerializers.getDefaultSerializers().registerType(TypeToken.of(IsValidCondition.class), new IsValidCondition.Serializer());
 		TypeSerializers.getDefaultSerializers().registerType(TypeToken.of(SpecCondition.class), new SpecCondition.Serializer());
 		TypeSerializers.getDefaultSerializers().registerType(TypeToken.of(SpeciesCondition.class), new SpeciesCondition.Serializer());
 		TypeSerializers.getDefaultSerializers().registerType(TypeToken.of(UltraBeastCondition.class), new UltraBeastCondition.Serializer());
+		TypeSerializers.getDefaultSerializers().registerType(TypeToken.of(BossCondition.class), new BossCondition.Serializer());
+		TypeSerializers.getDefaultSerializers().registerType(TypeToken.of(WithPokerusCondition.class), new WithPokerusCondition.Serializer());
 		TypeSerializers.getDefaultSerializers().registerType(TypeToken.of(WithParticlesCondition.class), new WithParticlesCondition.Serializer());
 
 		loadConfig();
@@ -93,6 +96,9 @@ public class Config {
 			conditions.load(node.getNode("conditions"));
 
 			startTask();
+
+			// Forces a save to update old versions
+			saveConfig();
 		} catch (Exception e) {
 			PixelGenocide.LOGGER.error("There was a problem while loading the configuration.", e);
 		}
@@ -100,13 +106,15 @@ public class Config {
 
 	public static void saveConfig() {
 		try {
+			node.getNode("timer").setComment("You can find more info at https://github.com/happyzleaf/PixelGenocide/wiki/Timer");
 			node.getNode("timer", "duration").setValue(TypeToken.of(GameTime.class), timerDuration);
-
 			node.getNode("timer", "rate").setComment("How often the remaining time till cleaning should be displayed.").setValue(TypeToken.of(TimedTask.Info.class), timerRate);
 
+			node.getNode("broadcast").setComment("You can find more info at https://github.com/happyzleaf/PixelGenocide/wiki/Broadcast");
 			node.getNode("broadcast", "timer").setComment("Placeholders: %timer_seconds% %timer_human%.").setValue(messageTimer);
 			node.getNode("broadcast", "cleaned").setComment("Placeholders: %wiped%.").setValue(messageCleaned);
 
+			node.getNode("conditions").setComment("You can find more info at https://github.com/happyzleaf/PixelGenocide/wiki/Conditions");
 			conditions.save(node.getNode("conditions"));
 
 			loader.save(node);
