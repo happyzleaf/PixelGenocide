@@ -62,7 +62,7 @@ public class PixelGenocide {
 
 								int wiped = (int) Wipe.all().stream().peek(EntityPixelmon::unloadEntity).count();
 								if (wiped > 0) {
-									MessageChannel.TO_ALL.send(Config.getMessageWiped(wiped));
+									Config.broadcastMessageWiped(MessageChannel.TO_ALL, wiped);
 								}
 
 								src.sendMessage(Text.of(TextColors.GREEN, "Successfully wiped away useless pok\u00E9mon in every world."));
@@ -80,7 +80,7 @@ public class PixelGenocide {
 
 							int wiped = (int) Wipe.world(world).stream().peek(EntityPixelmon::unloadEntity).count();
 							if (wiped > 0) {
-								MessageChannel.combined(MessageChannel.world(world), MessageChannel.fixed(src)).send(Config.getMessageWiped(wiped));
+								Config.broadcastMessageWiped(MessageChannel.combined(MessageChannel.world(world), MessageChannel.fixed(src)), wiped);
 							}
 
 							src.sendMessage(Text.of(TextColors.GREEN, String.format("Successfully wiped away useless pok\u00E9mon in %s.", world.getName())));

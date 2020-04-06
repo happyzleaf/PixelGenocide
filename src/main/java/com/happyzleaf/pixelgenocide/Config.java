@@ -42,11 +42,11 @@ public class Config {
 			Task.builder().execute(() -> {
 				int wiped = (int) toWipe.stream().peek(EntityPixelmon::unloadEntity).count();
 				if (wiped > 0) {
-					MessageChannel.TO_ALL.send(getMessageWiped(wiped));
+					broadcastMessageWiped(MessageChannel.TO_ALL, wiped);
 				}
 			}).submit(plugin);
 		}).submit(plugin);
-	}, s -> MessageChannel.TO_ALL.send(getMessageTimer(s)));
+	}, s -> broadcastMessageTimer(MessageChannel.TO_ALL, s));
 
 	public static void init(Object plugin) {
 		Config.plugin = plugin;
@@ -106,15 +106,15 @@ public class Config {
 
 	public static void saveConfig() {
 		try {
-			node.getNode("timer").setComment("You can find more info at https://github.com/happyzleaf/PixelGenocide/wiki/Timer");
+			node.getNode("timer").setComment("You can find more info at https://github.com/happyzleaf/PixelGenocide/wiki/Configuration#timer");
 			node.getNode("timer", "duration").setValue(TypeToken.of(GameTime.class), timerDuration);
 			node.getNode("timer", "rate").setComment("How often the remaining time till cleaning should be displayed.").setValue(TypeToken.of(TimedTask.Info.class), timerRate);
 
-			node.getNode("broadcast").setComment("You can find more info at https://github.com/happyzleaf/PixelGenocide/wiki/Broadcast");
-			node.getNode("broadcast", "timer").setComment("Placeholders: %timer_seconds% %timer_human%.").setValue(messageTimer);
-			node.getNode("broadcast", "cleaned").setComment("Placeholders: %wiped%.").setValue(messageCleaned);
+			node.getNode("broadcast").setComment("You can find more info at https://github.com/happyzleaf/PixelGenocide/wiki/Configuration#broadcast");
+			node.getNode("broadcast", "timer").setComment("Placeholders: %timer_seconds% %timer_human%. Leave empty to disable.").setValue(messageTimer);
+			node.getNode("broadcast", "cleaned").setComment("Placeholders: %wiped%. Leave empty to disable.").setValue(messageCleaned);
 
-			node.getNode("conditions").setComment("You can find more info at https://github.com/happyzleaf/PixelGenocide/wiki/Conditions");
+			node.getNode("conditions").setComment("You can find more info at https://github.com/happyzleaf/PixelGenocide/wiki/Configuration#conditions");
 			conditions.save(node.getNode("conditions"));
 
 			loader.save(node);
@@ -123,21 +123,25 @@ public class Config {
 		}
 	}
 
-	public static Text getMessageTimer(long remainingSeconds) {
-		return PlaceholderBridge.parseText(
-				messageTimer.replace("%timer_seconds%", String.valueOf(remainingSeconds))
-						.replace("%timer_human%", Helper.toHuman(remainingSeconds)),
-				null,
-				null
-		);
+	public static void broadcastMessageTimer(MessageChannel channel, long remainingSeconds) {
+		if (!messageTimer.isEmpty()) {
+			channel.send(PlaceholderBridge.parseText(
+					messageTimer.replace("%timer_seconds%", String.valueOf(remainingSeconds))
+							.replace("%timer_human%", Helper.toHuman(remainingSeconds)),
+					null,
+					null
+			));
+		}
 	}
 
-	public static Text getMessageWiped(int wiped) {
-		return PlaceholderBridge.parseText(
-				Config.messageCleaned.replace("%wiped%", String.valueOf(wiped)),
-				null,
-				null
-		);
+	public static void broadcastMessageWiped(MessageChannel channel, int wiped) {
+		if (!Config.messageCleaned.isEmpty()) {
+			channel.send(PlaceholderBridge.parseText(
+					Config.messageCleaned.replace("%wiped%", String.valueOf(wiped)),
+					null,
+					null
+			));
+		}
 	}
 
 	public static Conditions getConditions() {
